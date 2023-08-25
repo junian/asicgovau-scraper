@@ -28,6 +28,10 @@ async function scrapeASICNotices() {
       const content = await noticeTableSelector?.evaluate((x) => {
         const localResult = [];
         const articleBlocks = x.querySelectorAll(".article-block");
+
+        if(articleBlocks.length <= 0)
+          throw new Error("Couldn't find any .article-block");
+
         for (let i = 0; i < articleBlocks.length; i++) {
           const e = articleBlocks[i];
 
@@ -35,19 +39,30 @@ async function scrapeASICNotices() {
 
           const pubDate = e
             ?.querySelector(".title-block .published-date")
-            ?.textContent?.trim();
+            ?.textContent
+            ?.trim() ?? "";
+
+          if(pubDate == "")
+            throw new Error("Couldn't find publication date");
 
           const rawTitle = e
             ?.querySelector(".title-block h3")
-            ?.innerHTML?.replace("<br>", " ")
-            ?.trim();
+            ?.innerHTML
+            ?.replace("<br>", " ")
+            ?.trim() ?? "";
+
+          if(rawTitle == "")
+            throw new Error("Couldn't find raw Title");
 
           e?.querySelector(".title-block")?.remove();
 
           let noticeUrl = e
             ?.querySelector('.notice-buttons a[title="Preview"]')
-            ?.getAttribute("href");
+            ?.getAttribute("href") ?? "";
 
+          if(noticeUrl == "")
+            throw new Error("Couldn't find Notice URL");
+          
           const urlSplit = noticeUrl?.split("/");
 
           noticeUrl = location.protocol + "//" + location.hostname + noticeUrl;
@@ -68,6 +83,9 @@ async function scrapeASICNotices() {
             const acn = dls[j]?.querySelectorAll("dd")[0]?.textContent?.trim();
             acns.push(acn);
           }
+
+          if(acns.length <= 0)
+            throw new Error("Couldn't find any ACN");
 
           e?.querySelector(".notice-buttons")?.remove();
 
@@ -99,6 +117,20 @@ async function scrapeASICNotices() {
         '.NoticeTablePager a[href*="Page$' + (counter + 2) + '"]';
 
       await Promise.all([page.waitForNavigation(), page.click(clickSelector)]);
+    }
+
+    for(let i=0; i< result.length; i++) {
+      const currentNotice = result[i];
+
+      await page.goto(
+        currentNotice.noticeUrl
+      );
+
+      const noticeBodySelector = await page.waitForSelector(".xmlxslt-form");
+      const rawBody = await noticeBodySelector?.evaluate(x => x.innerHTML?.trim()) ?? "";
+      if(rawBody == "")
+        throw new Error("Couldn't find raw Body");
+      currentNotice.rawBody = rawBody;
     }
 
     await browser.close();
