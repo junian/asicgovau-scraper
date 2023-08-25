@@ -1,9 +1,9 @@
 import puppeteer from "puppeteer";
 import { RegistryNotice } from "./RegistryNotice";
-import { prisma } from "@server/db/db";
-import { logger } from "@logging/index";
-import { z } from "zod";
-import dayjs from "@utils/dayjs";
+//import { prisma } from "@server/db/db";
+//import { logger } from "@logging/index";
+//import { z } from "zod";
+//import dayjs from "@utils/dayjs";
 
 async function scrapeASICNotices() {
   const browser = await puppeteer.launch({ headless: "new" });
